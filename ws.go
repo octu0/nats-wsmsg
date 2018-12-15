@@ -62,6 +62,7 @@ func publish(nc *nats.Conn, topic string, msg *Message) error {
     return err
   }
   nc.Publish(topic, b)
+  nc.Flush()
   return nil
 }
 func PublishText(nc *nats.Conn, topic string, data []byte) error {
@@ -100,7 +101,6 @@ func (ws *WebsocketHandler) readLoop() {
       if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
         log.Printf("error: %v", err)
       }
-      log.Printf("error: %v", err)
       break
     }
     log.Printf("debug: message = %s", message)
@@ -167,6 +167,20 @@ func (ws *WebsocketHandler) RunSubscribe(topic string) error {
     ws.Close()
     return err
   }
+  ws.nc.Flush()
+  ws.subscription = sub
+
+  ws.runloop()
+  return nil
+}
+func (ws *WebsocketHandler) RunSubscribeWithGroup(topic, group string) error {
+  sub, err := ws.nc.ChanQueueSubscribe(topic, group, ws.subs)
+  if err != nil {
+    log.Printf("error: nats topic(%s) subscription failure: %s", topic, err.Error())
+    ws.Close()
+    return err
+  }
+  ws.nc.Flush()
   ws.subscription = sub
 
   ws.runloop()

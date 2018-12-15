@@ -27,9 +27,9 @@ func (c *HttpController) HttpHandler() http.Handler {
   r.StrictSlash(true)
 
   ws := r.PathPrefix("/ws").Subrouter()
-  ws.HandleFunc("/sub/{topic}", c.TopicSubscription)
+  ws.HandleFunc("/sub/{topic}", c.TopicSubscribe)
+  ws.HandleFunc("/sub/{topic}/{group}", c.TopicSubscribeWithQueue)
   ws.HandleFunc("/pub/{topic}", c.TopicPublish).Methods("POST")
-  ws.HandleFunc("/queue/{topic}", c.TopicEnqueue).Methods("POST")
 
   r.HandleFunc("/_version", c.Version).Methods("GET")
   r.HandleFunc("/_chk", c.CheckStatus).Methods("GET")
@@ -81,7 +81,7 @@ func (c *HttpController) Version(res http.ResponseWriter, req *http.Request) {
 func (c *HttpController) CheckStatus(res http.ResponseWriter, req *http.Request) {
   c.ok("OK", res, req)
 }
-func (c *HttpController) TopicSubscription(res http.ResponseWriter, req *http.Request) {
+func (c *HttpController) TopicSubscribe(res http.ResponseWriter, req *http.Request) {
   vars  := mux.Vars(req)
   topic := vars["topic"]
 
@@ -92,6 +92,19 @@ func (c *HttpController) TopicSubscription(res http.ResponseWriter, req *http.Re
   }
   ws.RunSubscribe(topic)
 }
+func (c *HttpController) TopicSubscribeWithQueue(res http.ResponseWriter, req *http.Request) {
+  vars  := mux.Vars(req)
+  topic := vars["topic"]
+  group := vars["group"]
+
+  ws, err := CreateWebsocketHandler(c.ctx, res, req)
+  if err != nil {
+    c.na(res, req)
+    return
+  }
+  ws.RunSubscribeWithGroup(topic, group)
+}
+
 func (c *HttpController) TopicPublish(res http.ResponseWriter, req *http.Request) {
   vars  := mux.Vars(req)
   topic := vars["topic"]
@@ -111,8 +124,6 @@ func (c *HttpController) TopicPublish(res http.ResponseWriter, req *http.Request
 
   PublishText(nc, topic, body)
   c.json(`{"message":"success"}`, res, req)
-}
-func (c *HttpController) TopicEnqueue(res http.ResponseWriter, req *http.Request) {
 }
 
 type WrapWriter struct {
