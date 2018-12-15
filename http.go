@@ -8,6 +8,8 @@ import(
   "net/http"
   "strings"
   "strconv"
+  "bufio"
+  "errors"
 
   "github.com/gorilla/mux"
 )
@@ -88,7 +90,7 @@ func (c *HttpController) TopicSubscription(res http.ResponseWriter, req *http.Re
     c.na(res, req)
     return
   }
-  ws.RunSubscrine(topic)
+  ws.RunSubscribe(topic)
 }
 func (c *HttpController) TopicPublish(res http.ResponseWriter, req *http.Request) {
   vars  := mux.Vars(req)
@@ -126,6 +128,14 @@ func (w *WrapWriter) Write(b []byte) (int, error) {
 func (w *WrapWriter) WriteHeader(status int) {
   w.LastStatus = status
   w.Writer.WriteHeader(status)
+}
+// allow hijack
+func (w *WrapWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
+  hijacker, ok := w.Writer.(http.Hijacker)
+  if !ok {
+		return nil, nil, errors.New("WrapWriter doesn't support the Hijacker interface")
+	}
+  return hijacker.Hijack()
 }
 func WrapAccessLog(next http.Handler, logger HttpLogger) http.Handler {
   return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
