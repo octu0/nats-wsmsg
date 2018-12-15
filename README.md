@@ -6,7 +6,7 @@ nats-wsmsg embeds [gnatsd](https://github.com/nats-io/gnatsd) and provides high 
 
 ## Quick Start
 
-Download latest [release]() version appropriate for operating architecture.  
+Download latest [release](https://github.com/octu0/nats-wsmsg/releases) version appropriate for operating architecture.  
 Run.
 
 ```
