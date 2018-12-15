@@ -34,7 +34,7 @@ $ go version
 Run `make pkg` to Build and package for linux, darwin.
 
 ```
-$ git clone https://github.com/octu0/dynomite-floridalist
+$ git clone https://github.com/octu0/nats-wsmsg
 $ make pkg
 ```
 
