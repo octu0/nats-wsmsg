@@ -1,6 +1,6 @@
 # nats-wsmsg
 
-[nats](https://nats.io/) based websocket message queue frontend.
+[nats](https://nats.io/) based websocket message queue server.
 
 nats-wsmsg embeds [gnatsd](https://github.com/nats-io/gnatsd) and provides high performance, portable portability, messaging capabilities.
 
