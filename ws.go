@@ -88,7 +88,6 @@ type WebsocketHandler struct {
   running      bool
 }
 func (ws *WebsocketHandler) readLoop() {
-  defer ws.Close()
   ws.conn.SetReadLimit(maxMessageSize)
   ws.conn.SetReadDeadline(time.Now().Add(10 * time.Second))
   ws.conn.SetPongHandler(func(string) error {
@@ -101,6 +100,7 @@ func (ws *WebsocketHandler) readLoop() {
       if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
         log.Printf("error: %v", err)
       }
+      log.Printf("error: %v", err)
       break
     }
     log.Printf("debug: message = %s", message)
@@ -110,7 +110,6 @@ func (ws *WebsocketHandler) writeLoop() {
   ticker := time.NewTicker(5 * time.Second)
   defer func() {
     ticker.Stop()
-    ws.Close()
   }()
 
   for ws.running {
@@ -161,7 +160,7 @@ func (ws *WebsocketHandler) Close() error {
   close(ws.subs)
   return ws.conn.Close()
 }
-func (ws *WebsocketHandler) RunSubscrine(topic string) error {
+func (ws *WebsocketHandler) RunSubscribe(topic string) error {
   sub, err := ws.nc.ChanSubscribe(topic, ws.subs)
   if err != nil {
     log.Printf("error: nats topic(%s) subscription failure: %s", topic, err.Error())
@@ -186,6 +185,7 @@ func CreateWebsocketHandler(ctx context.Context, res http.ResponseWriter, req *h
     log.Printf("warn: ws upgrade failure: %s", err.Error())
     return nil, err
   }
+
   nc, err := CreateNatsClient(ctx)
   if err != nil {
     log.Printf("error: nats client creation failure: %s", err.Error())
