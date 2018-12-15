@@ -13,6 +13,16 @@ Run.
 $ ./nats-wsmsg -p 8080
 ```
 
+### example Pub/Sub
+
+![output1](https://user-images.githubusercontent.com/42143893/50048366-70316a00-010d-11e9-8196-d84c00c0bc82.gif)
+
+### example Pub/Queue
+
+![output2](https://user-images.githubusercontent.com/42143893/50048371-8d663880-010d-11e9-833a-eeb3cbdcf294.gif)
+
+see more [example](https://github.com/octu0/nats-wsmsg/tree/master/example).
+
 ## Build
 
 Build requires Go version 1.11+ installed.
