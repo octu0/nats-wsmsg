@@ -30,6 +30,8 @@ func action(c *cli.Context) error {
     VerboseMode:  c.Bool("verbose"),
     Procs:        c.Int("procs"),
     LogDir:       c.String("log-dir"),
+    NatsLogStdout: c.Bool("stdout-nats-log"),
+    HttpLogStdout: c.Bool("stdout-http-log"),
     BindIP:       c.String("ip"),
     BindPort:     c.Int("port"),
   }
@@ -186,6 +188,16 @@ func main(){
       Name: "verbose, V",
       Usage: "verbose. more message",
       EnvVar: "WSMSG_VERBOSE",
+    },
+    cli.BoolFlag{
+      Name: "stdout-http-log",
+      Usage: "http-log outputs to standard out",
+      EnvVar: "WSMSG_STDOUT_HTTP_LOG",
+    },
+    cli.BoolFlag{
+      Name: "stdout-nats-log",
+      Usage: "nats-log outputs to standard out",
+      EnvVar: "WSMSG_STDOUT_NATS_LOG",
     },
   }
   if err := app.Run(os.Args); err != nil {

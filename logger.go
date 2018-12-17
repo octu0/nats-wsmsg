@@ -13,41 +13,6 @@ import(
   natsd "github.com/nats-io/gnatsd/server"
 )
 
-const TAB string = "\t"
-
-type HttpLogger interface {
-  Write(host string, method string, uri string, status int, ua string)
-}
-
-type DefLogger struct {
-  DebugMode  bool
-}
-
-func NewHttpLogger(c Config) HttpLogger {
-  l := new(DefLogger)
-  l.DebugMode = c.DebugMode
-  return l
-}
-func (l *DefLogger) Write(host string, method string, uri string, status int, ua string) {
-  msg := []string{
-    "host:", host,
-    TAB,
-    "method:", method,
-    TAB,
-    "uri:", uri,
-    TAB,
-    "status:", strconv.Itoa(status),
-    TAB,
-    "ua:", ua,
-  }
-  m := strings.Join(msg, "")
-  if l.DebugMode {
-    log.Printf("debug: %s", m)
-  } else {
-    log.Printf("info: %s", m)
-  }
-}
-
 type MultiLogger struct {
   std io.Writer
   sub io.Writer
@@ -64,24 +29,85 @@ func (m *MultiLogger) Write(p []byte) (int, error){
   return m.sub.Write(p)
 }
 
+const TAB string = "\t"
+
+type HttpLogger interface {
+  Write(host string, method string, uri string, status int, ua string)
+}
+
+type DefLogger struct {
+  m  *MultiLogger
+  r  *rotatelogs.RotateLogs
+  cl *log.Logger
+}
+
+func NewHttpLogger(config Config) HttpLogger {
+  rotate, err := rotatelogs.New(
+    config.LogDir + "/http_log.%Y%m%d", // TODO
+    rotatelogs.WithRotationTime(1 * time.Minute),
+    rotatelogs.WithMaxAge(-1),
+  )
+  if err != nil {
+    log.Fatalf("error: http file logger creation failed: %s", err.Error())
+  }
+
+  multi := new(MultiLogger)
+  multi.std = rotate
+  if config.HttpLogStdout {
+    multi.sub = os.Stdout
+  }
+
+  c := colog.NewCoLog(multi, "http ", log.Ldate | log.Ltime | log.Lshortfile)
+  c.SetDefaultLevel(colog.LDebug)
+  c.SetMinLevel(colog.LInfo)
+  if config.DebugMode {
+    c.SetMinLevel(colog.LDebug)
+    if config.VerboseMode {
+      c.SetMinLevel(colog.LTrace)
+    }
+  }
+
+  l   := new(DefLogger)
+  l.m  = multi
+  l.r  = rotate
+  l.cl = c.NewLogger()
+  return l
+}
+func (l *DefLogger) Write(host string, method string, uri string, status int, ua string) {
+  msg := []string{
+    "host:", host,
+    TAB,
+    "method:", method,
+    TAB,
+    "uri:", uri,
+    TAB,
+    "status:", strconv.Itoa(status),
+    TAB,
+    "ua:", ua,
+  }
+  m := strings.Join(msg, "")
+  l.cl.Printf("info: %s", m)
+}
+
 type NatsLogger struct {
   m  *MultiLogger
   r  *rotatelogs.RotateLogs
   cl *log.Logger
 }
 func NewNatsLogger(config Config) natsd.Logger {
-  multi := new(MultiLogger)
-  multi.std = os.Stdout
-
   rotate, err := rotatelogs.New(
     config.LogDir + "/nats_log.%Y%m%d", // TODO
     rotatelogs.WithRotationTime(1 * time.Minute),
     rotatelogs.WithMaxAge(-1),
   )
   if err != nil {
-    multi.sub = nil
-  } else {
-    multi.sub = rotate
+    log.Fatalf("error: nats file logger creation failed: %s", err.Error())
+  }
+
+  multi := new(MultiLogger)
+  multi.std = rotate
+  if config.NatsLogStdout {
+    multi.sub = os.Stdout
   }
 
   c := colog.NewCoLog(multi, "nats ", log.Ldate | log.Ltime | log.Lshortfile)
@@ -94,7 +120,7 @@ func NewNatsLogger(config Config) natsd.Logger {
     }
   }
 
-  l := new(NatsLogger)
+  l   := new(NatsLogger)
   l.m  = multi
   l.r  = rotate
   l.cl = c.NewLogger()
