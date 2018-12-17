@@ -45,10 +45,10 @@ NAME:
    nats-wsmsg
 
 USAGE:
-   main [global options] command [command options] [arguments...]
+   nats-wsmsg [global options] command [command options] [arguments...]
 
 VERSION:
-   1.0.0
+   1.1.0
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
@@ -61,6 +61,8 @@ GLOBAL OPTIONS:
    --procs value, -P value  attach cpu(s) (default: 8) [$WSMSG_PROCS]
    --debug, -d              debug mode [$WSMSG_DEBUG]
    --verbose, -V            verbose. more message [$WSMSG_VERBOSE]
+   --stdout-http-log        http-log outputs to standard out [$WSMSG_STDOUT_HTTP_LOG]
+   --stdout-nats-log        nats-log outputs to standard out [$WSMSG_STDOUT_NATS_LOG]
    --help, -h               show help
    --version, -v            print the version
 ```

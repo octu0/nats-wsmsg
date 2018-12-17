@@ -39,8 +39,7 @@ func CreateNatsClient(ctx context.Context) (*nats.Conn, error) {
   }
   return nc, nil
 }
-func DecodeMessage(nc *nats.Conn, m *nats.Msg) (*Message, error) {
-  data := m.Data
+func DecodeMessage(nc *nats.Conn, data []byte) (*Message, error) {
   msg  := new(Message)
   dec  := gob.NewDecoder(bytes.NewBuffer(data))
   if err := dec.Decode(&msg); err != nil {
@@ -142,7 +141,7 @@ func (ws *WebsocketHandler) subExchangeLoop(){
   for ws.running {
     select {
     case m := <-ws.subs:
-      msg, err := DecodeMessage(ws.nc, m);
+      msg, err := DecodeMessage(ws.nc, m.Data);
       if err != nil {
         log.Printf("warn: gob decode failure: %s", err.Error())
         continue

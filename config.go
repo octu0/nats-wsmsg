@@ -5,6 +5,8 @@ type Config struct {
   VerboseMode    bool
   Procs          int
   LogDir         string
+  NatsLogStdout  bool
+  HttpLogStdout  bool
   BindIP         string
   BindPort       int
 }
