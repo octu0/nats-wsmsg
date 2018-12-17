@@ -26,14 +26,14 @@ func AddCommand(cmd cli.Command){
 
 func action(c *cli.Context) error {
   config := wsmsg.Config{
-    DebugMode:    c.Bool("debug"),
-    VerboseMode:  c.Bool("verbose"),
-    Procs:        c.Int("procs"),
-    LogDir:       c.String("log-dir"),
+    DebugMode:     c.Bool("debug"),
+    VerboseMode:   c.Bool("verbose"),
+    Procs:         c.Int("procs"),
+    LogDir:        c.String("log-dir"),
     NatsLogStdout: c.Bool("stdout-nats-log"),
     HttpLogStdout: c.Bool("stdout-http-log"),
-    BindIP:       c.String("ip"),
-    BindPort:     c.Int("port"),
+    BindIP:        c.String("ip"),
+    BindPort:      c.Int("port"),
   }
   if config.Procs < 1 {
     config.Procs = 1
