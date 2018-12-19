@@ -1,6 +1,6 @@
 # nats-wsmsg
 
-[nats](https://nats.io/) based websocket message queue server.
+[nats](https://nats.io/) based websocket message pubsub/queue server.
 
 nats-wsmsg embeds [gnatsd](https://github.com/nats-io/gnatsd) and provides high performance, portable portability, messaging capabilities.
 
@@ -48,7 +48,7 @@ USAGE:
    nats-wsmsg [global options] command [command options] [arguments...]
 
 VERSION:
-   1.1.0
+   1.1.1
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
