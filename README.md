@@ -48,21 +48,22 @@ USAGE:
    nats-wsmsg [global options] command [command options] [arguments...]
 
 VERSION:
-   1.1.1
+   1.2.0
 
 COMMANDS:
      help, h  Shows a list of commands or help for one command
 
 GLOBAL OPTIONS:
-   -i value, --ip value     server bind-ip (default: "0.0.0.0") [$WSMSG_BIND_IP]
-   -p value, --port value   server bind-port (default: 8080) [$WSMSG_BIND_PORT]
-   --max-payload value      msg max payload size (default: 1048576) [$WSMSG_MAX_PAYLOAD]
-   --log-dir value          /path/to/log directory (default: "/tmp") [$WSMSG_LOG_DIR]
-   --procs value, -P value  attach cpu(s) (default: 8) [$WSMSG_PROCS]
-   --debug, -d              debug mode [$WSMSG_DEBUG]
-   --verbose, -V            verbose. more message [$WSMSG_VERBOSE]
-   --stdout-http-log        http-log outputs to standard out [$WSMSG_STDOUT_HTTP_LOG]
-   --stdout-nats-log        nats-log outputs to standard out [$WSMSG_STDOUT_NATS_LOG]
-   --help, -h               show help
-   --version, -v            print the version
+   -i value, --ip value         server bind-ip (default: "0.0.0.0") [$WSMSG_BIND_IP]
+   -p value, --port value       server bind-port (default: 8080) [$WSMSG_BIND_PORT]
+   --max-payload value          msg max payload size (default: 1048576) [$WSMSG_MAX_PAYLOAD]
+   --log-dir value              /path/to/log directory (default: "/tmp") [$WSMSG_LOG_DIR]
+   --ws-max-message-size value  websocket max message size(byte) (default: 1048576) [$WSMSG_WS_MAX_MSG_SIZE]
+   --procs value, -P value      attach cpu(s) (default: 8) [$WSMSG_PROCS]
+   --debug, -d                  debug mode [$WSMSG_DEBUG]
+   --verbose, -V                verbose. more message [$WSMSG_VERBOSE]
+   --stdout-http-log            http-log outputs to standard out [$WSMSG_STDOUT_HTTP_LOG]
+   --stdout-nats-log            nats-log outputs to standard out [$WSMSG_STDOUT_NATS_LOG]
+   --help, -h                   show help
+   --version, -v                print the version
 ```
