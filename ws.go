@@ -7,16 +7,11 @@ import(
   "bytes"
   "net/http"
   "encoding/gob"
+  "sync"
 
   "github.com/gorilla/websocket"
   "github.com/nats-io/go-nats"
 )
-
-const maxMessageSize = 1024 * 1024
-var upgrader = websocket.Upgrader{
-  ReadBufferSize:  10 * maxMessageSize,
-  WriteBufferSize: 10 * maxMessageSize,
-}
 
 type Message struct {
   MsgType  int
@@ -80,6 +75,7 @@ func PublishBinary(nc *nats.Conn, topic string, data []byte) error {
 type SendQueue chan *Message
 type SubQueue  chan *nats.Msg
 type WebsocketHandler struct {
+  config       Config
   conn         *websocket.Conn
   nc           *nats.Conn
   send         SendQueue
@@ -87,8 +83,9 @@ type WebsocketHandler struct {
   subscription *nats.Subscription
   running      bool
 }
-func (ws *WebsocketHandler) readLoop() {
-  ws.conn.SetReadLimit(maxMessageSize)
+func (ws *WebsocketHandler) readLoop(wg *sync.WaitGroup) {
+  defer wg.Done()
+  ws.conn.SetReadLimit(int64(ws.config.MaxMessageSize)) // large byte?
   ws.conn.SetReadDeadline(time.Now().Add(10 * time.Second))
   ws.conn.SetPongHandler(func(string) error {
     ws.conn.SetReadDeadline(time.Now().Add(10 * time.Second));
@@ -105,11 +102,10 @@ func (ws *WebsocketHandler) readLoop() {
     log.Printf("debug: message = %s", message)
   }
 }
-func (ws *WebsocketHandler) writeLoop() {
+func (ws *WebsocketHandler) writeLoop(wg *sync.WaitGroup) {
+  defer wg.Done()
   ticker := time.NewTicker(5 * time.Second)
-  defer func() {
-    ticker.Stop()
-  }()
+  defer ticker.Stop()
 
   for ws.running {
     select {
@@ -140,7 +136,10 @@ func (ws *WebsocketHandler) writeLoop() {
 func (ws *WebsocketHandler) subExchangeLoop(){
   for ws.running {
     select {
-    case m := <-ws.subs:
+    case m, ok := <-ws.subs:
+      if ok != true {
+        return // channel closed
+      }
       msg, err := DecodeMessage(ws.nc, m.Data);
       if err != nil {
         log.Printf("warn: gob decode failure: %s", err.Error())
@@ -150,6 +149,11 @@ func (ws *WebsocketHandler) subExchangeLoop(){
     }
   }
 }
+func (ws *WebsocketHandler) waitConnectionClose(wg *sync.WaitGroup) {
+  wg.Wait()
+  ws.Close()
+}
+
 func (ws *WebsocketHandler) Close() error {
   ws.subscription.Unsubscribe()
   ws.nc.Drain()
@@ -187,12 +191,25 @@ func (ws *WebsocketHandler) RunSubscribeWithGroup(topic, group string) error {
 }
 func (ws *WebsocketHandler) runloop() {
   ws.running = true
-  go ws.readLoop()
-  go ws.writeLoop()
+
+  closeRW := new(sync.WaitGroup)
+  closeRW.Add(1)
+  go ws.readLoop(closeRW)
+
+  closeRW.Add(1)
+  go ws.writeLoop(closeRW)
+  go ws.waitConnectionClose(closeRW)
   go ws.subExchangeLoop()
 }
 
 func CreateWebsocketHandler(ctx context.Context, res http.ResponseWriter, req *http.Request) (*WebsocketHandler, error) {
+  conf := ctx.Value("config").(Config)
+
+  var upgrader = websocket.Upgrader{
+    ReadBufferSize:  conf.MaxMessageSize,
+    WriteBufferSize: conf.MaxMessageSize,
+  }
+
   conn, err := upgrader.Upgrade(res, req, nil)
   if err != nil {
     log.Printf("warn: ws upgrade failure: %s", err.Error())
@@ -205,7 +222,7 @@ func CreateWebsocketHandler(ctx context.Context, res http.ResponseWriter, req *h
     return nil, err
   }
 
-  ws := new(WebsocketHandler)
+  ws      := new(WebsocketHandler)
   ws.conn  = conn
   ws.nc    = nc
   ws.send  = make(SendQueue, 0)
