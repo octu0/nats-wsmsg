@@ -26,14 +26,15 @@ func AddCommand(cmd cli.Command){
 
 func action(c *cli.Context) error {
   config := wsmsg.Config{
-    DebugMode:     c.Bool("debug"),
-    VerboseMode:   c.Bool("verbose"),
-    Procs:         c.Int("procs"),
-    LogDir:        c.String("log-dir"),
-    NatsLogStdout: c.Bool("stdout-nats-log"),
-    HttpLogStdout: c.Bool("stdout-http-log"),
-    BindIP:        c.String("ip"),
-    BindPort:      c.Int("port"),
+    DebugMode:      c.Bool("debug"),
+    VerboseMode:    c.Bool("verbose"),
+    Procs:          c.Int("procs"),
+    LogDir:         c.String("log-dir"),
+    NatsLogStdout:  c.Bool("stdout-nats-log"),
+    HttpLogStdout:  c.Bool("stdout-http-log"),
+    BindIP:         c.String("ip"),
+    BindPort:       c.Int("port"),
+    MaxMessageSize: c.Int("max-message-size"),
   }
   if config.Procs < 1 {
     config.Procs = 1
@@ -172,6 +173,12 @@ func main(){
       Usage: "/path/to/log directory",
       Value: wsmsg.DEFAULT_LOG_DIR,
       EnvVar: "WSMSG_LOG_DIR",
+    },
+    cli.IntFlag{
+      Name: "ws-max-message-size",
+      Usage: "websocket max message size(byte)",
+      Value: wsmsg.DEFAULT_WS_MAX_MESSAGE_SIZE,
+      EnvVar: "WSMSG_WS_MAX_MSG_SIZE",
     },
     cli.IntFlag{
       Name: "procs, P",

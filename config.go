@@ -9,4 +9,5 @@ type Config struct {
   HttpLogStdout  bool
   BindIP         string
   BindPort       int
+  MaxMessageSize int
 }
