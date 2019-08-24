@@ -11,8 +11,9 @@ deps:
 	GO111MODULE=on go get github.com/comail/colog
 	GO111MODULE=on go get github.com/gorilla/mux
 	GO111MODULE=on go get github.com/gorilla/websocket
-	GO111MODULE=on go get github.com/urfave/cli@v1.20.0
-	GO111MODULE=on go get github.com/nats-io/nats-server/v2
+	GO111MODULE=on go get github.com/urfave/cli@v1.21.0
+	GO111MODULE=on go get github.com/nats-io/gnatsd@v1.4.1
+	GO111MODULE=on go get github.com/nats-io/nats-server
 	GO111MODULE=on go get github.com/nats-io/nats.go/@v1.8.1
 	GO111MODULE=on go get github.com/lestrrat-go/file-rotatelogs
 

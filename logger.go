@@ -10,7 +10,7 @@ import(
 
   "github.com/comail/colog"
   "github.com/lestrrat-go/file-rotatelogs"
-  natsd "github.com/nats-io/gnatsd/server"
+  natsd "github.com/nats-io/nats-server/server"
 )
 
 type MultiLogger struct {
