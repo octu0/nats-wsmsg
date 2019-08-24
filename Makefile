@@ -8,17 +8,17 @@ _GOOS      = darwin
 _GOARCH    = amd64
 
 deps:
-	go get github.com/comail/colog
-	go get github.com/gorilla/mux
-	go get github.com/gorilla/websocket
-	go get gopkg.in/urfave/cli.v1
-	go get github.com/nats-io/gnatsd/server
-	go get github.com/nats-io/go-nats
-	go get github.com/lestrrat-go/file-rotatelogs
+	GO111MODULE=on go get github.com/comail/colog
+	GO111MODULE=on go get github.com/gorilla/mux
+	GO111MODULE=on go get github.com/gorilla/websocket
+	GO111MODULE=on go get github.com/urfave/cli@v1.20.0
+	GO111MODULE=on go get github.com/nats-io/nats-server/v2
+	GO111MODULE=on go get github.com/nats-io/nats.go/@v1.8.1
+	GO111MODULE=on go get github.com/lestrrat-go/file-rotatelogs
 
 build:
 	go generate
-	GOOS=$(_GOOS) GOARCH=$(_GOARCH) go build -o $(_NAME) $(MAIN_GO)
+	GOOS=$(_GOOS) GOARCH=$(_GOARCH) GO111MODULE=on go build -o $(_NAME) $(MAIN_GO)
 
 test: deps
 	go test -v ./...

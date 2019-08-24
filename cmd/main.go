@@ -11,8 +11,8 @@ import(
   "syscall"
 
   "github.com/comail/colog"
-  "gopkg.in/urfave/cli.v1"
-  natsd "github.com/nats-io/gnatsd/server"
+  "github.com/urfave/cli"
+  natsd "github.com/nats-io/nats-server/server"
 
   "github.com/octu0/nats-wsmsg"
 )
@@ -60,11 +60,7 @@ func action(c *cli.Context) error {
     PingInterval: time.Millisecond * time.Duration(wsmsg.DEFAULT_PING_INTERVAL),
     MaxPingsOut:  wsmsg.DEFAULT_PING_OUT,
   }
-  ns, err := natsd.NewServer(opts)
-  if err != nil {
-    log.Printf("error: nats server start failure: %s", err.Error());
-    return err
-  }
+  ns := natsd.New(opts)
   ns.SetLogger(wsmsg.NewNatsLogger(config), opts.Debug, opts.Trace)
 
   go ns.Start()
