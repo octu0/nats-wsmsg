@@ -7,16 +7,6 @@ _VERSION   = $(shell grep -o 'Version string = "[0-9]\.[0-9]\.[0-9]"' $(VERSION_
 _GOOS      = darwin
 _GOARCH    = amd64
 
-deps:
-	GO111MODULE=on go get github.com/comail/colog
-	GO111MODULE=on go get github.com/gorilla/mux
-	GO111MODULE=on go get github.com/gorilla/websocket
-	GO111MODULE=on go get github.com/urfave/cli@v1.21.0
-	GO111MODULE=on go get github.com/nats-io/gnatsd@v1.4.1
-	GO111MODULE=on go get github.com/nats-io/nats-server
-	GO111MODULE=on go get github.com/nats-io/nats.go/@v1.8.1
-	GO111MODULE=on go get github.com/lestrrat-go/file-rotatelogs
-
 build:
 	go generate
 	GOOS=$(_GOOS) GOARCH=$(_GOARCH) GO111MODULE=on go build -o $(_NAME) $(MAIN_GO)
@@ -45,7 +35,7 @@ pkg-darwin-amd64:
 	$(call pkg-build-main,darwin,amd64)
 	$(call zip-main,darwin,amd64)
 
-pkg: deps pre-pkg \
+pkg: pre-pkg \
 	pkg-linux-amd64 \
 	pkg-darwin-amd64
 
