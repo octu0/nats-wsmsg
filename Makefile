@@ -8,7 +8,6 @@ _GOOS      = darwin
 _GOARCH    = amd64
 
 build:
-	go generate
 	GOOS=$(_GOOS) GOARCH=$(_GOARCH) GO111MODULE=on go build -o $(_NAME) $(MAIN_GO)
 
 test: deps
