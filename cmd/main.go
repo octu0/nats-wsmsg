@@ -1,132 +1,23 @@
 package main
 
 import (
-	"context"
-	"fmt"
 	"log"
 	"os"
-	"os/signal"
-	"runtime"
-	"syscall"
-	"time"
 
 	"github.com/comail/colog"
-	"github.com/nats-io/nats-server/v2/server"
-	"github.com/urfave/cli"
+	"gopkg.in/urfave/cli.v1"
 
 	"github.com/octu0/nats-wsmsg"
+	"github.com/octu0/nats-wsmsg/cli/clicommon"
+	"github.com/octu0/nats-wsmsg/cli/server"
 )
 
-var (
-	Commands = make([]cli.Command, 0)
-)
-
-func AddCommand(cmd cli.Command) {
-	Commands = append(Commands, cmd)
-}
-
-func action(c *cli.Context) error {
-	config := wsmsg.Config{
-		DebugMode:      c.Bool("debug"),
-		VerboseMode:    c.Bool("verbose"),
-		Procs:          c.Int("procs"),
-		LogDir:         c.String("log-dir"),
-		NatsLogStdout:  c.Bool("stdout-nats-log"),
-		HttpLogStdout:  c.Bool("stdout-http-log"),
-		BindIP:         c.String("ip"),
-		BindPort:       c.Int("port"),
-		MaxMessageSize: c.Int("max-message-size"),
+func mergeCommand(values ...[]cli.Command) []cli.Command {
+	merged := make([]cli.Command, 0, 0xff)
+	for _, commands := range values {
+		merged = append(merged, commands...)
 	}
-	if config.Procs < 1 {
-		config.Procs = 1
-	}
-
-	if config.DebugMode {
-		colog.SetMinLevel(colog.LDebug)
-		if config.VerboseMode {
-			colog.SetMinLevel(colog.LTrace)
-		}
-	}
-
-	opts := &server.Options{
-		Host:         "127.0.0.1",
-		Port:         -1,
-		HTTPPort:     -1,
-		Cluster:      server.ClusterOpts{Port: -1},
-		NoLog:        true,
-		NoSigs:       true,
-		Debug:        config.DebugMode,
-		Trace:        config.VerboseMode,
-		MaxPayload:   int32(c.Int("max-payload")),
-		PingInterval: time.Millisecond * time.Duration(wsmsg.DEFAULT_PING_INTERVAL),
-		MaxPingsOut:  wsmsg.DEFAULT_PING_OUT,
-	}
-	ns := server.New(opts)
-	ns.SetLogger(wsmsg.NewNatsLogger(config), opts.Debug, opts.Trace)
-
-	go ns.Start()
-
-	if ns.ReadyForConnections(10*time.Second) != true {
-		return fmt.Errorf("error: unable to start a NATS Server on %s:%d", opts.Host, opts.Port)
-	}
-	log.Printf("info: local nats started: %s", ns.Addr().String())
-
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, "config", config)
-	ctx = context.WithValue(ctx, "logger.http", wsmsg.NewHttpLogger(config))
-	ctx = context.WithValue(ctx, "logger.nats", wsmsg.NewNatsLogger(config))
-	ctx = context.WithValue(ctx, "nats.url", fmt.Sprintf("nats://%s", ns.Addr().String()))
-
-	http := wsmsg.NewHttpServer(ctx)
-	error_chan := make(chan error, 0)
-	stopService := func() error {
-		sctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
-
-		if err := http.Stop(sctx); err != nil {
-			log.Printf("error: %s", err.Error())
-			return err
-		}
-
-		ns.Shutdown()
-		return nil
-	}
-
-	go func() {
-		if err := http.Start(context.TODO()); err != nil {
-			error_chan <- err
-		}
-	}()
-
-	signal_chan := make(chan os.Signal, 10)
-	signal.Notify(signal_chan, syscall.SIGTERM)
-	signal.Notify(signal_chan, syscall.SIGHUP)
-	signal.Notify(signal_chan, syscall.SIGQUIT)
-	signal.Notify(signal_chan, syscall.SIGINT)
-	running := true
-	var lastErr error
-	for running {
-		select {
-		case err := <-error_chan:
-			log.Printf("error: error has occurred: %s", err.Error())
-			lastErr = err
-			if e := stopService(); e != nil {
-				lastErr = e
-			}
-			running = false
-		case sig := <-signal_chan:
-			log.Printf("info: signal trap(%s)", sig.String())
-			if err := stopService(); err != nil {
-				lastErr = err
-			}
-			running = false
-		}
-	}
-	if lastErr == nil {
-		log.Printf("info: shutdown successful")
-		return nil
-	}
-	return lastErr
+	return merged
 }
 
 func main() {
@@ -144,68 +35,12 @@ func main() {
 	app.Author = ""
 	app.Email = ""
 	app.Usage = ""
-	app.Action = action
-	app.Commands = Commands
-	app.Flags = []cli.Flag{
-		cli.StringFlag{
-			Name:   "i, ip",
-			Usage:  "server bind-ip",
-			Value:  wsmsg.DEFAULT_BIND_IP,
-			EnvVar: "WSMSG_BIND_IP",
-		},
-		cli.IntFlag{
-			Name:   "p, port",
-			Usage:  "server bind-port",
-			Value:  wsmsg.DEFAULT_BIND_PORT,
-			EnvVar: "WSMSG_BIND_PORT",
-		},
-		cli.IntFlag{
-			Name:   "max-payload",
-			Usage:  "msg max payload size",
-			Value:  wsmsg.DEFAULT_MSG_MAX_PAYLOAD,
-			EnvVar: "WSMSG_MAX_PAYLOAD",
-		},
-		cli.StringFlag{
-			Name:   "log-dir",
-			Usage:  "/path/to/log directory",
-			Value:  wsmsg.DEFAULT_LOG_DIR,
-			EnvVar: "WSMSG_LOG_DIR",
-		},
-		cli.IntFlag{
-			Name:   "ws-max-message-size",
-			Usage:  "websocket max message size(byte)",
-			Value:  wsmsg.DEFAULT_WS_MAX_MESSAGE_SIZE,
-			EnvVar: "WSMSG_WS_MAX_MSG_SIZE",
-		},
-		cli.IntFlag{
-			Name:   "procs, P",
-			Usage:  "attach cpu(s)",
-			Value:  runtime.NumCPU(),
-			EnvVar: "WSMSG_PROCS",
-		},
-		cli.BoolFlag{
-			Name:   "debug, d",
-			Usage:  "debug mode",
-			EnvVar: "WSMSG_DEBUG",
-		},
-		cli.BoolFlag{
-			Name:   "verbose, V",
-			Usage:  "verbose. more message",
-			EnvVar: "WSMSG_VERBOSE",
-		},
-		cli.BoolFlag{
-			Name:   "stdout-http-log",
-			Usage:  "http-log outputs to standard out",
-			EnvVar: "WSMSG_STDOUT_HTTP_LOG",
-		},
-		cli.BoolFlag{
-			Name:   "stdout-nats-log",
-			Usage:  "nats-log outputs to standard out",
-			EnvVar: "WSMSG_STDOUT_NATS_LOG",
-		},
-	}
+	app.Commands = mergeCommand(
+		server.Command(),
+	)
+	app.Flags = clicommon.GlobalFlag()
 	if err := app.Run(os.Args); err != nil {
-		log.Printf("error: %s", err.Error())
+		log.Printf("error: %+v", err)
 		cli.OsExiter(1)
 	}
 }
