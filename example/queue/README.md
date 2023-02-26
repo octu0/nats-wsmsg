@@ -45,5 +45,5 @@ for {
 Use the POST method for any topic name (test this time) and set the value.
 
 ```
-$ curl -X POST http://localhost:8080/ws/pub/test -d 'hello'
+$ curl -X POST http://localhost:8080/pub/test -d 'hello'
 ```
